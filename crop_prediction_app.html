@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAIA - Asistente de Cultivos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .file-upload.drag-over {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .results-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-top: 30px;
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .prediction-card h3 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .confidence {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .recommendations {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 300px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: #f7fafc;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <h1>GAIA</h1>
+                <p>Asistente de Cultivos</p>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Input Panel -->
+                <div class="panel">
+                    <h2> Análisis de Suelo</h2>
+                    
+                    <!-- Manual Input -->
+                    <div v-if="inputMode === 'manual'">
+                        <div class="input-group">
+                            <label>Nitrógeno (N) - mg/kg</label>
+                            <input type="number" v-model="soilData.nitrogen" step="0.1" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Fósforo (P) - mg/kg</label>
+                            <input type="number" v-model="soilData.phosphorus" step="0.1" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Potasio (K) - mg/kg</label>
+                            <input type="number" v-model="soilData.potassium" step="0.1" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Temperatura (°C)</label>
+                            <input type="number" v-model="soilData.temperature" step="0.1" min="0" max="50">
+                        </div>
+                        <div class="input-group">
+                            <label>Humedad (%)</label>
+                            <input type="number" v-model="soilData.humidity" step="0.1" min="0" max="100">
+                        </div>
+                        <div class="input-group">
+                            <label>pH del Suelo</label>
+                            <input type="number" v-model="soilData.ph" step="0.1" min="0" max="14">
+                        </div>
+                        <div class="input-group">
+                            <label>Precipitación (mm)</label>
+                            <input type="number" v-model="soilData.rainfall" step="0.1" min="0">
+                        </div>
+                        
+                        <button class="btn" @click="predictFromManualInput" :disabled="!isManualInputValid">
+                            🔮 Predecir Cultivo Óptimo
+                        </button>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div v-else>
+                        <div class="file-upload" 
+                             @click="$refs.fileInput.click()"
+                             @dragover.prevent="dragOver = true"
+                             @dragleave.prevent="dragOver = false"
+                             @drop.prevent="handleFileDrop"
+                             :class="{ 'drag-over': dragOver }">
+                            <div v-if="!uploadedFile">
+                                <p> Arrastra tu archivo CSV aquí o haz clic para seleccionar</p>
+                                <small>Formato esperado: N, P, K, temperatura, humedad, pH, precipitación</small>
+                            </div>
+                            <div v-else>
+                                <p> {{ uploadedFile.name }}</p>
+                                <small>{{ csvData.length }} registros cargados</small>
+                            </div>
+                        </div>
+                        <input type="file" 
+                               ref="fileInput" 
+                               @change="handleFileUpload" 
+                               accept=".csv" 
+                               style="display: none;">
+                        
+                        <button class="btn" 
+                                @click="predictFromCSV" 
+                                :disabled="!uploadedFile"
+                                style="margin-top: 15px;">
+                             Procesar CSV
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button @click="toggleInputMode" class="btn" style="background: #718096; width: auto; padding: 8px 16px;">
+                            {{ inputMode === 'manual' ? '📁 Cambiar a CSV' : '✏️ Entrada Manual' }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Visualization Panel -->
+                <div class="panel">
+                    <h2> Visualización de Datos</h2>
+                    <div v-if="hasDataToShow">
+                        <div class="chart-container">
+                            <canvas ref="soilChart"></canvas>
+                        </div>
+                        
+                        <div v-if="csvData.length > 0" style="margin-top: 20px;">
+                            <h3>Datos Cargados</h3>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>N</th>
+                                        <th>P</th>
+                                        <th>K</th>
+                                        <th>Temp</th>
+                                        <th>Humedad</th>
+                                        <th>pH</th>
+                                        <th>Lluvia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(row, index) in csvData.slice(0, 5)" :key="index">
+                                        <td>{{ row.N }}</td>
+                                        <td>{{ row.P }}</td>
+                                        <td>{{ row.K }}</td>
+                                        <td>{{ row.temperature }}</td>
+                                        <td>{{ row.humidity }}</td>
+                                        <td>{{ row.ph }}</td>
+                                        <td>{{ row.rainfall }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <small v-if="csvData.length > 5">Mostrando primeros 5 de {{ csvData.length }} registros</small>
+                        </div>
+                    </div>
+                    <div v-else>
+                        <p style="text-align: center; color: #718096; margin-top: 50px;">
+                             Los datos aparecerán aquí una vez que ingreses información
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div v-if="alert.show" :class="['alert', alert.type === 'success' ? 'alert-success' : 'alert-error']">
+                {{ alert.message }}
+            </div>
+
+            <!-- Results Section -->
+            <div v-if="predictions.length > 0" class="results-section">
+                <h2> Resultados de la Predicción</h2>
+                
+                <div v-if="predictions.length === 1" class="prediction-card">
+                    <h3>{{ predictions[0].crop }}</h3>
+                    <div class="confidence">Confianza: {{ predictions[0].confidence }}%</div>
+                </div>
+
+                <div v-else>
+                    <div v-for="(prediction, index) in predictions.slice(0, 3)" :key="index" class="prediction-card" style="margin-bottom: 10px;">
+                        <h4>Registro {{ index + 1 }}: {{ prediction.crop }}</h4>
+                        <small>Confianza: {{ prediction.confidence }}%</small>
+                    </div>
+                    <p v-if="predictions.length > 3" style="text-align: center; color: #718096;">
+                        Y {{ predictions.length - 3 }} predicciones más...
+                    </p>
+                </div>
+
+                <div class="recommendations">
+                    <h3> Recomendaciones</h3>
+                    <div v-if="currentRecommendation">
+                        <p><strong>Cultivo recomendado:</strong> {{ currentRecommendation.name }}</p>
+                        <p><strong>Temporada óptima:</strong> {{ currentRecommendation.season }}</p>
+                        <p><strong>Tiempo de cosecha:</strong> {{ currentRecommendation.harvest_time }}</p>
+                        <p><strong>Consejos:</strong> {{ currentRecommendation.tips }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                // Reactive data
+                const inputMode = ref('manual');
+                const dragOver = ref(false);
+                const uploadedFile = ref(null);
+                const csvData = ref([]);
+                const predictions = ref([]);
+                const soilChart = ref(null);
+                const chartInstance = ref(null);
+                
+                const soilData = ref({
+                    nitrogen: 90,
+                    phosphorus: 42,
+                    potassium: 43,
+                    temperature: 20.8,
+                    humidity: 82.0,
+                    ph: 6.5,
+                    rainfall: 202.9
+                });
+
+                const alert = ref({
+                    show: false,
+                    type: 'success',
+                    message: ''
+                });
+
+                // Crop database with detailed information
+                const cropDatabase = {
+                    'rice': { name: 'Arroz', season: 'Lluvioso', harvest_time: '3-6 meses', tips: 'Requiere mucha agua y temperaturas cálidas constantes' },
+                    'maize': { name: 'Maíz', season: 'Verano', harvest_time: '2-3 meses', tips: 'Necesita buen drenaje y temperaturas moderadas' },
+                    'chickpea': { name: 'Garbanzo', season: 'Invierno', harvest_time: '3-4 meses', tips: 'Prefiere clima fresco y seco' },
+                    'kidneybeans': { name: 'Frijol', season: 'Primavera', harvest_time: '2-3 meses', tips: 'Sensible a las heladas, necesita temperaturas moderadas' },
+                    'pigeonpeas': { name: 'Guandú', season: 'Todo el año', harvest_time: '4-6 meses', tips: 'Muy resistente a la sequía' },
+                    'mothbeans': { name: 'Frijol Polilla', season: 'Verano', harvest_time: '3-4 meses', tips: 'Tolerante a la sequía y suelos pobres' },
+                    'mungbean': { name: 'Frijol Mungo', season: 'Verano', harvest_time: '2-3 meses', tips: 'Crece rápido, ideal para rotación de cultivos' },
+                    'blackgram': { name: 'Lenteja Negra', season: 'Invierno', harvest_time: '3-4 meses', tips: 'Mejora la fertilidad del suelo' },
+                    'lentil': { name: 'Lenteja', season: 'Invierno', harvest_time: '3-4 meses', tips: 'Prefiere clima fresco y seco' },
+                    'pomegranate': { name: 'Granada', season: 'Todo el año', harvest_time: '6-7 meses', tips: 'Requiere poda regular y riego controlado' },
+                    'banana': { name: 'Plátano', season: 'Todo el año', harvest_time: '9-12 meses', tips: 'Necesita clima tropical húmedo' },
+                    'mango': { name: 'Mango', season: 'Verano', harvest_time: '3-5 años', tips: 'Requiere clima cálido y estación seca para floración' },
+                    'grapes': { name: 'Uva', season: 'Verano', harvest_time: '2-3 años', tips: 'Necesita buen drenaje y poda adecuada' },
+                    'watermelon': { name: 'Sandía', season: 'Verano', harvest_time: '2-3 meses', tips: 'Requiere mucho espacio y agua abundante' },
+                    'muskmelon': { name: 'Melón', season: 'Verano', harvest_time: '2-3 meses', tips: 'Sensible al exceso de humedad' },
+                    'apple': { name: 'Manzana', season: 'Primavera', harvest_time: '2-4 años', tips: 'Requiere período de frío invernal' },
+                    'orange': { name: 'Naranja', season: 'Invierno', harvest_time: '3-4 años', tips: 'Sensible a las heladas' },
+                    'papaya': { name: 'Papaya', season: 'Todo el año', harvest_time: '6-8 meses', tips: 'Crece rápido en clima tropical' },
+                    'coconut': { name: 'Coco', season: 'Todo el año', harvest_time: '5-6 años', tips: 'Requiere clima costero tropical' },
+                    'cotton': { name: 'Algodón', season: 'Verano', harvest_time: '4-6 meses', tips: 'Necesita período seco para la cosecha' },
+                    'jute': { name: 'Yute', season: 'Lluvioso', harvest_time: '3-4 meses', tips: 'Requiere mucha humedad y temperaturas altas' },
+                    'coffee': { name: 'Café', season: 'Todo el año', harvest_time: '3-4 años', tips: 'Prefiere altitudes elevadas y sombra parcial' }
+                };
+
+                // Computed properties
+                const isManualInputValid = computed(() => {
+                    return Object.values(soilData.value).every(val => val !== '' && val !== null);
+                });
+
+                const hasDataToShow = computed(() => {
+                    return (inputMode.value === 'manual' && isManualInputValid.value) || csvData.value.length > 0;
+                });
+
+                const currentRecommendation = computed(() => {
+                    if (predictions.value.length > 0) {
+                        const cropKey = predictions.value[0].crop.toLowerCase().replace(/\s+/g, '');
+                        return cropDatabase[cropKey] || null;
+                    }
+                    return null;
+                });
+
+                // Methods
+                const showAlert = (message, type = 'success') => {
+                    alert.value = { show: true, message, type };
+                    setTimeout(() => {
+                        alert.value.show = false;
+                    }, 4000);
+                };
+
+                const toggleInputMode = () => {
+                    inputMode.value = inputMode.value === 'manual' ? 'csv' : 'manual';
+                    predictions.value = [];
+                };
+
+                const handleFileUpload = (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        processFile(file);
+                    }
+                };
+
+                const handleFileDrop = (event) => {
+                    dragOver.value = false;
+                    const file = event.dataTransfer.files[0];
+                    if (file) {
+                        processFile(file);
+                    }
+                };
+
+                const processFile = (file) => {
+                    if (!file.name.toLowerCase().endsWith('.csv')) {
+                        showAlert('Por favor selecciona un archivo CSV válido', 'error');
+                        return;
+                    }
+
+                    uploadedFile.value = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const csv = e.target.result;
+                            const lines = csv.split('\n').filter(line => line.trim());
+                            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                            
+                            // Validate headers
+                            const expectedHeaders = ['n', 'p', 'k', 'temperature', 'humidity', 'ph', 'rainfall'];
+                            const hasValidHeaders = expectedHeaders.every(h => 
+                                headers.some(header => header.includes(h))
+                            );
+
+                            if (!hasValidHeaders) {
+                                showAlert('El CSV debe contener las columnas: N, P, K, temperature, humidity, ph, rainfall', 'error');
+                                return;
+                            }
+
+                            const data = [];
+                            for (let i = 1; i < lines.length && i < 101; i++) { // Limit to 100 rows
+                                const values = lines[i].split(',');
+                                if (values.length >= 7) {
+                                    data.push({
+                                        N: parseFloat(values[0]) || 0,
+                                        P: parseFloat(values[1]) || 0,
+                                        K: parseFloat(values[2]) || 0,
+                                        temperature: parseFloat(values[3]) || 0,
+                                        humidity: parseFloat(values[4]) || 0,
+                                        ph: parseFloat(values[5]) || 0,
+                                        rainfall: parseFloat(values[6]) || 0
+                                    });
+                                }
+                            }
+
+                            csvData.value = data;
+                            showAlert(`CSV procesado correctamente. ${data.length} registros cargados.`);
+                            updateChart();
+                        } catch (error) {
+                            showAlert('Error al procesar el archivo CSV', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+
+                // Simplified Random Forest prediction simulation
+                const simulateRandomForest = (inputData) => {
+                    const crops = Object.keys(cropDatabase);
+                    
+                    // Simple scoring based on soil parameters
+                    const scores = crops.map(crop => {
+                        let score = Math.random() * 0.3 + 0.7; // Base score 70-100%
+                        
+                        // Adjust score based on soil conditions (simplified rules)
+                        if (crop === 'rice' && inputData.rainfall > 200) score += 0.1;
+                        if (crop === 'maize' && inputData.temperature > 18 && inputData.temperature < 25) score += 0.1;
+                        if (crop === 'cotton' && inputData.humidity < 70) score += 0.1;
+                        if (crop === 'coconut' && inputData.humidity > 80) score += 0.1;
+                        
+                        // pH preferences
+                        if (inputData.ph >= 6.0 && inputData.ph <= 7.5) {
+                            if (['rice', 'maize', 'cotton'].includes(crop)) score += 0.05;
+                        }
+                        
+                        // NPK preferences  
+                        const npkSum = inputData.N + inputData.P + inputData.K;
+                        if (npkSum > 150) {
+                            if (['maize', 'cotton', 'sugarcane'].includes(crop)) score += 0.05;
+                        }
+
+                        return { crop: cropDatabase[crop].name, confidence: Math.min(100, Math.round(score * 100)) };
+                    });
+
+                    return scores.sort((a, b) => b.confidence - a.confidence);
+                };
+
+                const predictFromManualInput = () => {
+                    if (!isManualInputValid.value) {
+                        showAlert('Por favor completa todos los campos', 'error');
+                        return;
+                    }
+
+                    const inputData = {
+                        N: parseFloat(soilData.value.nitrogen),
+                        P: parseFloat(soilData.value.phosphorus),
+                        K: parseFloat(soilData.value.potassium),
+                        temperature: parseFloat(soilData.value.temperature),
+                        humidity: parseFloat(soilData.value.humidity),
+                        ph: parseFloat(soilData.value.ph),
+                        rainfall: parseFloat(soilData.value.rainfall)
+                    };
+
+                    const results = simulateRandomForest(inputData);
+                    predictions.value = [results[0]]; // Show top prediction
+                    
+                    showAlert(`Predicción completada. Cultivo recomendado: ${results[0].crop}`);
+                    updateChart();
+                };
+
+                const predictFromCSV = () => {
+                    if (csvData.value.length === 0) {
+                        showAlert('No hay datos CSV para procesar', 'error');
+                        return;
+                    }
+
+                    const results = [];
+                    csvData.value.forEach(row => {
+                        const prediction = simulateRandomForest(row);
+                        results.push(prediction[0]);
+                    });
+
+                    predictions.value = results;
+                    showAlert(`Predicciones completadas para ${results.length} registros`);
+                };
+
+                const updateChart = () => {
+                    nextTick(() => {
+                        if (!soilChart.value) return;
+
+                        const ctx = soilChart.value.getContext('2d');
+                        
+                        if (chartInstance.value) {
+                            chartInstance.value.destroy();
+                        }
+
+                        let data, labels;
+                        
+                        if (inputMode.value === 'manual' && isManualInputValid.value) {
+                            data = [
+                                soilData.value.nitrogen,
+                                soilData.value.phosphorus,
+                                soilData.value.potassium,
+                                soilData.value.temperature,
+                                soilData.value.humidity,
+                                soilData.value.ph * 10, // Scale pH for visibility
+                                soilData.value.rainfall / 10 // Scale rainfall for visibility
+                            ];
+                            labels = ['N', 'P', 'K', 'Temp', 'Humedad', 'pH (x10)', 'Lluvia (/10)'];
+                        } else if (csvData.value.length > 0) {
+                            // Show averages for CSV data
+                            const averages = csvData.value.reduce((acc, row) => {
+                                acc.N += row.N;
+                                acc.P += row.P;
+                                acc.K += row.K;
+                                acc.temperature += row.temperature;
+                                acc.humidity += row.humidity;
+                                acc.ph += row.ph;
+                                acc.rainfall += row.rainfall;
+                                return acc;
+                            }, { N: 0, P: 0, K: 0, temperature: 0, humidity: 0, ph: 0, rainfall: 0 });
+
+                            const count = csvData.value.length;
+                            data = [
+                                Math.round(averages.N / count),
+                                Math.round(averages.P / count),
+                                Math.round(averages.K / count),
+                                Math.round(averages.temperature / count),
+                                Math.round(averages.humidity / count),
+                                Math.round((averages.ph / count) * 10),
+                                Math.round((averages.rainfall / count) / 10)
+                            ];
+                            labels = ['N (prom)', 'P (prom)', 'K (prom)', 'Temp (prom)', 'Humedad (prom)', 'pH (x10)', 'Lluvia (/10)'];
+                        }
+
+                        if (data && labels) {
+                            chartInstance.value = new Chart(ctx, {
+                                type: 'radar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Parámetros del Suelo',
+                                        data: data,
+                                        borderColor: 'rgb(102, 126, 234)',
+                                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                                        borderWidth: 2,
+                                        pointBackgroundColor: 'rgb(102, 126, 234)',
+                                        pointBorderColor: '#fff',
+                                        pointHoverBackgroundColor: '#fff',
+                                        pointHoverBorderColor: 'rgb(102, 126, 234)'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        }
+                                    },
+                                    scales: {
+                                        r: {
+                                            beginAtZero: true,
+                                            grid: {
+                                                color: 'rgba(0, 0, 0, 0.1)'
+                                            },
+                                            angleLines: {
+                                                color: 'rgba(0, 0, 0, 0.1)'
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                };
+
+                // Lifecycle
+                onMounted(() => {
+                    updateChart();
+                });
+
+                return {
+                    inputMode,
+                    dragOver,
+                    uploadedFile,
+                    csvData,
+                    predictions,
+                    soilData,
+                    alert,
+                    soilChart,
+                    isManualInputValid,
+                    hasDataToShow,
+                    currentRecommendation,
+                    toggleInputMode,
+                    handleFileUpload,
+                    handleFileDrop,
+                    predictFromManualInput,
+                    predictFromCSV,
+                    updateChart
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
