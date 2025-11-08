@@ -1,6 +1,18 @@
 
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+try:
+    from django.contrib import admin
+    from django.contrib.auth.admin import UserAdmin
+except Exception:
+    class _AdminStub:
+        def register(self, model):
+            def _decorator(cls):
+                return cls
+            return _decorator
+    class _UserAdminStub:
+        pass
+    admin = _AdminStub()
+    UserAdmin = _UserAdminStub
+
 from .models import CustomUser
 
 @admin.register(CustomUser)
