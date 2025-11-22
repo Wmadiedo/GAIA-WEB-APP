@@ -32,8 +32,14 @@ db.sqlite3
 *.pot
 *.pyc
 media/
-
-# Static files (si se generan localmente)
+#librerias locales.
+lib/
+Lib/
+lib64/
+site-packages/
+*/site-packages/
+**/site-packages/
+# Static files
 staticfiles/
 static/
 
