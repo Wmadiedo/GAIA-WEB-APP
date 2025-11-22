@@ -9,7 +9,6 @@ import os
 from django.conf import settings
 
 class CropPredictionModel:
-    """Modelo Random Forest para predicción de cultivos."""
     
     def __init__(self):
         self.model = None
@@ -69,6 +68,7 @@ class CropPredictionModel:
         return df
     
     def train_model(self, retrain=False):
+        """Entrena el modelo Random Forest con el dataset real"""
         model_path = os.path.join(settings.BASE_DIR, 'ml_models', 'crop_model.pkl')
         scaler_path = os.path.join(settings.BASE_DIR, 'ml_models', 'scaler.pkl')
         encoder_path = os.path.join(settings.BASE_DIR, 'ml_models', 'label_encoder.pkl')
@@ -83,14 +83,14 @@ class CropPredictionModel:
             self.label_encoder = joblib.load(encoder_path)
             return
         
-        print("Entrenando nuevo modelo Random Forest con dataset aportado...")
+        print("Entrenando nuevo modelo Random Forest con dataset real...")
         
         # Cargar dataset
         df = self.load_dataset()
         
         if df is None:
             print("ERROR: No se pudo cargar el dataset.")
-            print("Por favor, coloca el archivo .CSV en la raíz del proyecto.")
+            print("Por favor, coloca el archivo 'Crop_recommendation.csv' en la raíz del proyecto.")
             # Crear un modelo dummy para que la app no falle
             self._create_dummy_model()
             return
@@ -142,7 +142,7 @@ class CropPredictionModel:
         accuracy = accuracy_score(y_test, y_pred)
         
         print(f"\n{'='*60}")
-        print(f"MODELO ENTRENADO EXITOSAMENTE")
+        print(f"✅ MODELO ENTRENADO EXITOSAMENTE")
         print(f"{'='*60}")
         print(f"Precisión en test: {accuracy:.4f} ({accuracy*100:.2f}%)")
         print(f"Muestras de entrenamiento: {len(X_train)}")
@@ -162,13 +162,13 @@ class CropPredictionModel:
         joblib.dump(self.scaler, scaler_path)
         joblib.dump(self.label_encoder, encoder_path)
         
-        print(f"\nModelo guardado en: {model_path}")
-        print(f"Escalador guardado en: {scaler_path}")
-        print(f"Codificador guardado en: {encoder_path}")
+        print(f"\n✅ Modelo guardado en: {model_path}")
+        print(f"✅ Escalador guardado en: {scaler_path}")
+        print(f"✅ Codificador guardado en: {encoder_path}")
     
     def _create_dummy_model(self):
         """Crea un modelo dummy para que la app no falle si no hay dataset"""
-        print("Creando modelo dummy (predicciones aleatorias NO CONFIABLES.)...")
+        print("⚠️ Creando modelo dummy (predicciones aleatorias)...")
         self.model = "dummy"
         self.scaler = StandardScaler()
         self.label_encoder = LabelEncoder()
@@ -193,16 +193,17 @@ class CropPredictionModel:
         if self.model == "dummy":
             return self._dummy_predict()
         
-        # Preparar datos
+        # Preparar datos como DataFrame para evitar warnings
         if isinstance(soil_data, dict):
-            features = [soil_data[feature] for feature in self.feature_names]
-            features = np.array(features).reshape(1, -1)
+            # Crear DataFrame con nombres de columnas
+            features_df = pd.DataFrame([soil_data], columns=self.feature_names)
         else:
-            features = np.array(soil_data).reshape(1, -1)
+            # Convertir array a DataFrame
+            features_df = pd.DataFrame([soil_data], columns=self.feature_names)
         
         # Validar que los datos estén en rangos razonables
         try:
-            features_scaled = self.scaler.transform(features)
+            features_scaled = self.scaler.transform(features_df)
         except Exception as e:
             print(f"Error al escalar características: {e}")
             return self._dummy_predict()

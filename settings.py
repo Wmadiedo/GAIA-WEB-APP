@@ -105,3 +105,22 @@ CORS_ALLOW_CREDENTIALS = True
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
+
+
+# Cambia DEBUG a True si no lo está
+DEBUG = True
+
+# Y asegúrate de tener esto al final del archivo:
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

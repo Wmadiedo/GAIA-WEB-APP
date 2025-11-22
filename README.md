@@ -11,7 +11,7 @@ INSTRUCCIONES DE INSTALACIÓN:
 
 3. Configurar base de datos:
    - Instalar PostgreSQL
-   - Crear base de datos 'agropredict'
+   - Crear base de datos 'gaia'
    - Configurar variables de entorno en .env
 
 4. Ejecutar migraciones:

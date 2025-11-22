@@ -11,7 +11,7 @@ class DatasetSerializer(serializers.ModelSerializer):
         if not value.name.endswith('.csv'):
             raise serializers.ValidationError("Solo se permiten archivos CSV.")
         
-        if value.size > 10 * 1024 * 1024:  # 10MB limit
+        if value.size > 10 * 1024 * 1024:  # limite de 10 mb.
             raise serializers.ValidationError("El archivo es demasiado grande (máximo 10MB).")
         
         return value
@@ -36,8 +36,8 @@ class SoilDataSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'humidity': 'La humedad debe estar entre 0 y 100%'})
         if not (0 <= data.get('ph', 0) <= 14):
             raise serializers.ValidationError({'ph': 'El pH debe estar entre 0 y 14'})
-        if not (0 <= data.get('rainfall', 0) <= 1000):
-            raise serializers.ValidationError({'rainfall': 'La precipitación debe estar entre 0 y 1000mm'})
+        if not (0 <= data.get('rainfall', 0) <= 3000):
+            raise serializers.ValidationError({'rainfall': 'La precipitación debe estar entre 0 y 10000mm'})
         
         return data
 
@@ -58,4 +58,4 @@ class ManualPredictionSerializer(serializers.Serializer):
     temperature = serializers.FloatField(min_value=-10, max_value=50)
     humidity = serializers.FloatField(min_value=0, max_value=100)
     ph = serializers.FloatField(min_value=0, max_value=14)
-    rainfall = serializers.FloatField(min_value=0, max_value=1000)
+    rainfall = serializers.FloatField(min_value=0, max_value=10000) 

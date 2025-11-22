@@ -3,7 +3,7 @@ pip<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GAIA - Sistema de Predicción de Cultivos</title>
+    <title>GAIA - Asistente de Predicción de Cultivos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
@@ -407,9 +407,8 @@ pip<!DOCTYPE html>
     <div id="app">
         <!-- Auth Screen -->
         <div v-if="!isAuthenticated" class="auth-container">
-            <img src="gaialogo.jpg" alt="GAIA logo" style="display:block; margin-left:auto; margin-right:auto; width:100px; height:100px;">
-            <h1 style="text-align: center; color: #4a5568; margin-bottom: 30px;">GAIA</h1>
-            
+            <img src="/static/gaialogo.png" alt="GAIA logo" style="display:block; margin:auto; width:115px; height:100px;">
+            <p>Asistente de Predicción de cultivos</p>
             <div class="auth-toggle">
                 <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">
                     Iniciar Sesión
@@ -472,10 +471,10 @@ pip<!DOCTYPE html>
         <div v-else class="container">
             <!-- Header -->
             <div class="header">
-                <h1>GAIA</h1>
-                <p>Sistema Inteligente de Predicción de Cultivos.</p>
+                <img src="/static/gaialogo.png" alt="GAIA logo" style="display:block; margin:auto; width:180px; height:150px;">
+                <p>Asistente de Predicción de Cultivos.</p>
                 <div class="user-info" v-if="user">
-                    <span>Bienvenido, {{ user.first_name }} {{ user.last_name }}</span><br>
+                    <span>Hola, {{ user.first_name }} {{ user.last_name }}</span><br>
                     <small>{{ user.email }}</small><br>
                     <button class="logout-btn" @click="logout">Cerrar Sesión</button>
                 </div>
@@ -515,7 +514,7 @@ pip<!DOCTYPE html>
                         </div>
                         <div class="input-group">
                             <label>Precipitación (mm)</label>
-                            <input type="number" v-model="soilData.rainfall" step="0.1" min="0">
+                            <input type="number" v-model="soilData.rainfall" step="0.1" min="0" max="5000">
                         </div>
                         
                         <button class="btn" @click="predictFromManualInput" :disabled="!isManualInputValid || loading">
@@ -565,7 +564,7 @@ pip<!DOCTYPE html>
 
                 <!-- Datasets and Visualization Panel -->
                 <div class="panel">
-                    <h2>Datasets y Visualización</h2>
+                    <h2>Datasets </h2>
                     
                     <div v-if="datasets.length > 0">
                         <h3>Mis Datasets</h3>
@@ -723,13 +722,13 @@ pip<!DOCTYPE html>
                 const chartInstance = ref(null);
                 
                 const soilData = ref({
-                    nitrogen: 90,
-                    phosphorus: 42,
-                    potassium: 43,
-                    temperature: 20.8,
-                    humidity: 82.0,
-                    ph: 6.5,
-                    rainfall: 202.9
+                    nitrogen: '',
+                    phosphorus: '',
+                    potassium: '',
+                    temperature: '',
+                    humidity: '',
+                    ph: '',
+                    rainfall: ''
                 });
 
                 const alert = ref({
@@ -923,7 +922,6 @@ pip<!DOCTYPE html>
                         setLoading(false);
                     }
                 };
-
                 const uploadAndPredict = async () => {
                     if (!uploadedFile.value) {
                         showAlert('No hay archivo seleccionado', 'error');
@@ -956,8 +954,16 @@ pip<!DOCTYPE html>
                             
                             const predictResponse = await axios.post(`/predict/csv/${datasetId}/`);
                             
-                            predictions.value = predictResponse.data.predictions || [];
-                            showAlert(predictResponse.data.message);
+                            // Normalizar predicciones para que tengan crop_name
+                            const rawPredictions = predictResponse.data.predictions || [];
+                            predictions.value = rawPredictions.map(pred => ({
+                                ...pred,
+                                crop_name: pred.crop_name || pred.crop,
+                                confidence: pred.confidence || 0
+                            }));
+                            
+                            console.log('Predicciones CSV procesadas:', predictions.value);
+                            showAlert(predictResponse.data.message || `${predictions.value.length} predicciones realizadas`);
                         }
                         
                         uploadedFile.value = null;
@@ -966,6 +972,7 @@ pip<!DOCTYPE html>
                         }
                         
                     } catch (error) {
+                        console.error('Error completo:', error);
                         const errorMsg = error.response?.data?.error || 'Error procesando archivo';
                         showAlert(errorMsg, 'error');
                     } finally {
@@ -973,6 +980,7 @@ pip<!DOCTYPE html>
                     }
                 };
 
+               
                 const predictDataset = async (datasetId) => {
                     setLoading(true, 'Realizando predicciones del dataset...');
                     try {
@@ -1008,8 +1016,7 @@ pip<!DOCTYPE html>
                         setLoading(false);
                     }
                 };
-
-                // Chart methods
+// Chart methods
                 const updateChart = () => {
                     nextTick(() => {
                         if (!soilChart.value) return;
@@ -1169,5 +1176,3 @@ pip<!DOCTYPE html>
             }
         }).mount('#app');
     </script>
-</body>
-</html>
